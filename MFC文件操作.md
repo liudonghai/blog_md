@@ -20,6 +20,60 @@ title: MFC文件操作
 
 ```
 
+&emsp;简单介绍一下该类的几个常用函数：
+
+Function | Describe
+----------- | ----------
+CFileFind::FindFile | Searches a directory for a specified file name.
+CFileFind::FindNextFile | Continues a file search from a previous call to FindFile.
+CFileFind::IsDirectory | Determines if the found file is a directory.
+
+&emsp;还有部分获取各类文件属性的方法，MSDN搜索CFileFind就可以找到了。**值得注意的是IsDirectory这个方法，在调用该方法的时候，必须先调用FindNextFile，否则程序就会报错**。
+
+下面给了两个小代码，一个是判断文件或者是目录是否存在的方法,另一个是递归搜索文件的方法：
+
+``` C++
+/*
+函数功能：判断给定路径的文件或者文件夹是否存在
+参数：
+	输入：
+	cstrPath:文件路径
+返回值：
+	不存在：0;
+	存在且是文件：1；
+	存在且是目录：2.
+*/
+INT file_check(CString cstrPath)
+{
+	assert(!cstrPath.IsEmpty());
+	INT iResult = 0;
+	BOOL bResult;
+	CFileFind m_FileFind;
+
+	bResult = m_FileFind.FindFile(cstrPath);
+	if (bResult)
+	{
+		m_FileFind.FindNextFileW();
+		if (m_FileFind.IsDirectory())
+		{
+			iResult = 2;
+		}
+		else
+		{
+			iResult = 1;
+		}
+	}
+	else
+	{
+		iResult = 0;
+	}
+	m_FileFind.Close();
+	return iResult;
+}
+```
+ 
+ 
+
 　　2．文件的打开/保存对话框
 　　让用户选择文件进行打开和存储操作时，就要用到文件打开/保存对话框。MFC的类CFileDialog用于实现这种功能。使用CFileDialog声明一个对象时，第一个BOOL型参数用于指定文件的打开或保存，当为TRUE时将构造一个文件打开对话框，为FALSE时构造一个文件保存对话框。
 　　在构造CFileDialog对象时，如果在参数中指定了OFN_ALLOWMULTISELECT风格，则在此对话框中可以进行多选操作。此时要重点注意为此CFileDialog对象的m_ofn.lpstrFile分配一块内存，用于存储多选操作所返回的所有文件路径名，如果不进行分配或分配的内存过小就会导致操作失败。下面这段程序演示了文件打开对话框的使用方法。
