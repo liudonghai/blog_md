@@ -28,7 +28,7 @@ CFileFind::FindFile | Searches a directory for a specified file name.
 CFileFind::FindNextFile | Continues a file search from a previous call to FindFile.
 CFileFind::IsDirectory | Determines if the found file is a directory.
 
-&emsp;还有部分获取各类文件属性的方法，MSDN搜索CFileFind就可以找到了。**值得注意的是IsDirectory这个方法，在调用该方法的时候，必须先调用FindNextFile，否则程序就会报错**。
+&emsp;还有部分获取各类文件属性的方法，MSDN搜索CFileFind就可以找到了。**值得注意的是包括IsDirectory在内的几个方法，在调用的时候，必须先调用FindNextFile，否则程序就会报错**。个人理解FindFile这个方法只能让你找到这个路径指示的文件或者文件夹，但是并不能获取到相关的数据。
 
 下面给了两个小代码，一个是判断文件或者是目录是否存在的方法,另一个是递归搜索文件的方法：
 
@@ -43,7 +43,7 @@ CFileFind::IsDirectory | Determines if the found file is a directory.
 	存在且是文件：1；
 	存在且是目录：2.
 */
-INT file_check(CString cstrPath)
+INT file_check(const CString cstrPath)
 {
 	assert(!cstrPath.IsEmpty());
 	INT iResult = 0;
@@ -72,25 +72,84 @@ INT file_check(CString cstrPath)
 }
 ```
  
+``` C++
+/*
+功能：递归查找指定路径下，包含特定关键字的文件。
+参数：
+	输出：
+	cstrDirPath：文件路径；
+	pKeyName：关键字；
+	bSubDirectory：是否查找子文件夹，TRUE表示需要。
+*/
+VOID CTBSScriptManager::file_find(const CString cstrDirPath, const CString cstrKey = L"*.*", 
+				bool bSubDirectory = TRUE)
+{
+	assert(!cstrDirPath.IsEmpty());
+
+	CFileFind m_FileFind;
+	BOOL bResult;
+	
+	bResult=m_FileFind.FindFile(cstrDirPath+L"\\*.*");
+	while(bResult)
+	{
+		bResult = m_FileFind.FindNextFile();
+		if (m_FileFind.IsDots())
+			continue;
+		if (m_FileFind.IsDirectory() && bSubDirectory)
+		{
+			CString cstrPath = m_FileFind.GetFilePath();
+			file_find(cstrPath);
+		}
+		else
+		{
+			CString cstrPath = m_FileFind.GetFilePath();
+			CString cstrName = m_FileFind.GetFileName();
+			BSTR bstr;
+			bstr = cstrName.AllocSysString();
+			wregex m_wregex(cstrKey);
+			if(regex_search(bstr, m_wregex))
+			{
+				//TODO:	adding execute by yourself when the file is found.
+			}
+		}
+	}
+	m_FileFind.Close();
+}
+
+```
  
+# 2．文件的打开/保存对话框
+&emsp;让用户选择文件进行打开和存储操作时，就要用到文件打开/保存对话框。MFC的类CFileDialog用于实现这种功能。使用CFileDialog声明一个对象时，第一个BOOL型参数用于指定文件的打开或保存，当为TRUE时将构造一个文件打开对话框，为FALSE时构造一个文件保存对话框。
+&emsp;在构造CFileDialog对象时，如果在参数中指定了OFN_ALLOWMULTISELECT风格，则在此对话框中可以进行多选操作。此时要重点注意为此CFileDialog对象的m_ofn.lpstrFile分配一块内存，用于存储多选操作所返回的所有文件路径名，如果不进行分配或分配的内存过小就会导致操作失败。下面这段程序演示了文件打开对话框的使用方法。
 
-　　2．文件的打开/保存对话框
-　　让用户选择文件进行打开和存储操作时，就要用到文件打开/保存对话框。MFC的类CFileDialog用于实现这种功能。使用CFileDialog声明一个对象时，第一个BOOL型参数用于指定文件的打开或保存，当为TRUE时将构造一个文件打开对话框，为FALSE时构造一个文件保存对话框。
-　　在构造CFileDialog对象时，如果在参数中指定了OFN_ALLOWMULTISELECT风格，则在此对话框中可以进行多选操作。此时要重点注意为此CFileDialog对象的m_ofn.lpstrFile分配一块内存，用于存储多选操作所返回的所有文件路径名，如果不进行分配或分配的内存过小就会导致操作失败。下面这段程序演示了文件打开对话框的使用方法。
 
-　　CFileDialog mFileDlg(TRUE,NULL,NULL,OFN_HIDEREADONLY|OFN_OVERWRITEPROMPT|OFN_ALLOWMULTISELECT,
-　　"All Files (*.*)|*.*||",AfxGetMainWnd());
-　　CString str(" ",10000);
-　　mFileDlg.m_ofn.lpstrFile=str.GetBuffer(10000);
-　　str.ReleaseBuffer();
-　　POSITION mPos=mFileDlg.GetStartPosition();
-　　CString pathName(" ",128);
-　　CFileStatus status;
-　　while(mPos!=NULL)
-　　{
-　　pathName=mFileDlg.GetNextPathName(mPos);
-　　CFile::GetStatus( pathName, status );
-　　}
+``` C++
+explicit CFileDialog(
+   BOOL bOpenFileDialog, //文件打开对话框类型，TRUE为打开对话框
+   LPCTSTR lpszDefExt = NULL, //默认的文件扩展名
+   LPCTSTR lpszFileName = NULL, //显示文件名框的初始文件名
+   DWORD dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,//可以使用自定义对话框一个或多个标记的组合
+   LPCTSTR lpszFilter = NULL, //一系列字符串名称的筛选器可应用于文件
+   CWnd* pParentWnd = NULL, //指针到文件对话框的父级或所有者窗口
+   DWORD dwSize = 0,//OPENFILENAME 结构的大小
+   BOOL bVistaStyle = TRUE//指定文件对话框的样式的参数
+);
+```
+对于MFC提供的这个类使用相对简单，只需要根据你需要的风格选择相应的dwFlags值即可，这里有两点值得注意的是：一是lpszFilter的写法，必须以"|"结尾，再一个就是当选择多个文件的时候如何去存储相应的数据，下面显示一个选择多个文件的简单例子：
+``` C++
+	CFileDialog mFileDlg(TRUE,NULL,NULL,OFN_HIDEREADONLY|OFN_OVERWRITEPROMPT|OFN_ALLOWMULTISELECT,"All Files (*.*)|*.*||");
+	CString str(L" ",10000);
+	mFileDlg.m_ofn.lpstrFile=str.GetBuffer(10000);
+	str.ReleaseBuffer();
+	POSITION mPos=mFileDlg.GetStartPosition();
+	CString pathName(" ",128);
+	CFileStatus status;
+	while(mPos!=NULL)
+	{
+		pathName=mFileDlg.GetNextPathName(mPos);
+		CFile::GetStatus( pathName, status );
+	}
+```
 
 　　3．文件的读写
 　　文件的读写非常重要，下面将重点进行介绍。文件读写的最普通的方法是直接使用CFile进行，如文件的读写可以使用下面的方法：
