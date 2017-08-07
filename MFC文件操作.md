@@ -124,6 +124,7 @@ VOID CTBSScriptManager::file_find(const CString cstrDirPath, const CString cstrK
 
 
 ``` C++
+
 explicit CFileDialog(
    BOOL bOpenFileDialog, //文件打开对话框类型，TRUE为打开对话框
    LPCTSTR lpszDefExt = NULL, //默认的文件扩展名
@@ -134,39 +135,51 @@ explicit CFileDialog(
    DWORD dwSize = 0,//OPENFILENAME 结构的大小
    BOOL bVistaStyle = TRUE//指定文件对话框的样式的参数
 );
+
 ```
 对于MFC提供的这个类使用相对简单，只需要根据你需要的风格选择相应的dwFlags值即可，这里有两点值得注意的是：一是lpszFilter的写法，必须以"|"结尾，再一个就是当选择多个文件的时候如何去存储相应的数据，下面显示一个选择多个文件的简单例子：
+
 ``` C++
-	CFileDialog mFileDlg(TRUE,NULL,NULL,OFN_HIDEREADONLY|OFN_OVERWRITEPROMPT|OFN_ALLOWMULTISELECT,"All Files (*.*)|*.*||");
-	CString str(L" ",10000);
-	mFileDlg.m_ofn.lpstrFile=str.GetBuffer(10000);
-	str.ReleaseBuffer();
-	POSITION mPos=mFileDlg.GetStartPosition();
-	CString pathName(" ",128);
-	CFileStatus status;
-	while(mPos!=NULL)
+
+	CString cstrFileBuffer;
+	CString cstrFileName;
+	POSITION m_Pos;
+	CString cstrFile = _T("All file(*.*)|*.*|")\
+		_T("*.cpp;*.h|*.cpp;*.h|");
+
+	CFileDialog m_FileDlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_ALLOWMULTISELECT, cstrFile);
+	m_FileDlg.m_ofn.lpstrFile = cstrFileBuffer.GetBuffer(1024 * 10);
+	cstrFileBuffer.ReleaseBuffer();
+	if (IDOK == m_FileDlg.DoModal())
 	{
-		pathName=mFileDlg.GetNextPathName(mPos);
-		CFile::GetStatus( pathName, status );
+		m_Pos = m_FileDlg.GetStartPosition();
+		while (m_Pos != NULL)
+		{
+			cstrFileName = m_FileDlg.GetNextPathName(m_Pos);
+			MessageBox(cstrFileName);
+		}
 	}
 ```
 
-　　3．文件的读写
-　　文件的读写非常重要，下面将重点进行介绍。文件读写的最普通的方法是直接使用CFile进行，如文件的读写可以使用下面的方法：
-　　//对文件进行读操作
-　　
-char sRead[2];
-　　CFile mFile(_T("user.txt"),CFile::modeRead);
-　　if(mFile.GetLength()<2)
-　　return;
-　　mFile.Read(sRead,2);
-　　mFile.Close();
-　　//对文件进行写操作
-　　CFile mFile(_T("user.txt "), CFile::modeWrite|CFile::modeCreate);
-　　mFile.Write(sRead,2);
-　　mFile.Flush();
-　　mFile.Close();
+# 3．文件的读写
+&emsp;文件的读写非常重要，下面将重点进行介绍。文件读写的最普通的方法是直接使用CFile进行，如文件的读写可以使用下面的方法：
 
+``` C++
+
+	//对文件进行读操作
+	char sRead[2];
+	CFile mFile(_T("user.txt"),CFile::modeRead);
+	if(mFile.GetLength()<2)
+	return;
+	mFile.Read(sRead,2);
+	mFile.Close();
+	//对文件进行写操作
+	CFile mFile(_T("user.txt "), CFile::modeWrite|CFile::modeCreate);
+	mFile.Write(sRead,2);
+	mFile.Flush();
+	mFile.Close();
+
+```
 　　虽然这种方法最为基本，但是它的使用繁琐，而且功能非常简单。我向你推荐的是使用CArchive，它的使用方法简单且功能十分强大。首先还是用CFile声明一个对象，然后用这个对象的指针做参数声明一个CArchive对象，你就可以非常方便地存储各种复杂的数据类型了。它的使用方法见下例。
 　　
 //对文件进行写操作
@@ -182,7 +195,7 @@ char sRead[2];
 　　return;
 　　CArchive ar(&mFile,CArchive::load);
 　 　ar>>strTemp;
-    　 ar.Close();
+	ar.Close();
 　　mFile.Close();
 
 　　CArchive的 << 和>> 操作符用于简单数据类型的读写，对于CObject派生类的对象的存取要使用ReadObject()和WriteObject()。使用CArchive的ReadClass()和WriteClass()还可以进行类的读写，如：
@@ -192,7 +205,7 @@ char sRead[2];
 　　CRuntimeClass* mRunClass=ar.ReadClass();
 　　//使用CAboutDlg类
 　　CObject* pObject=mRunClass->CreateObject();
-    　　((CDialog* )pObject)->DoModal();
+   ((CDialog* )pObject)->DoModal();
 　　虽然VC提供的文档/视结构中的文档也可进行这些操作，但是不容易理解、使用和管理，因此虽然很多VC入门的书上花费大量篇幅讲述文档/视结构，但我建议你最好不要使用它的文档。关于如何进行文档/视的分离有很多书介绍，包括非常著名的《Visual C++ 技术内幕》。
 　　如果你要进行的文件操作只是简单的读写整行的字符串，我建议你使用CStdioFile，用它来进行此类操作非常方便，如下例。
 　　CStdioFile mFile;
