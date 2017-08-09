@@ -164,21 +164,20 @@ explicit CFileDialog(
 # 3．文件的读写
 &emsp;文件的读写非常重要，下面将重点进行介绍。文件读写的最普通的方法是直接使用CFile进行，如文件的读写可以使用下面的方法：
 
+如何去重复读取文件数据：首先获得文件的长度，每次读取完成以后，判断当前文件偏移量是否达到文件末尾即可。
 ``` C++
-
-	//对文件进行读操作
-	char sRead[2];
-	CFile mFile(_T("user.txt"),CFile::modeRead);
-	if(mFile.GetLength()<2)
-	return;
-	mFile.Read(sRead,2);
-	mFile.Close();
-	//对文件进行写操作
-	CFile mFile(_T("user.txt "), CFile::modeWrite|CFile::modeCreate);
-	mFile.Write(sRead,2);
-	mFile.Flush();
-	mFile.Close();
-
+	CHAR cWriteBuffer[20];
+	CHAR cReadBuffer[21];
+	memset(cWriteBuffer, 'b', 20);
+	memset(cReadBuffer, '0', 21);
+	CFile m_File(_T("user.txt"), CFile::modeCreate|CFile::modeNoTruncate | CFile::modeReadWrite);
+	/*m_File.Write(cWriteBuffer, sizeof(cWriteBuffer));
+	m_File.Flush();*/
+	m_File.SeekToBegin();
+	INT i=m_File.Read(cReadBuffer, sizeof(cReadBuffer)/2);
+	cReadBuffer[i] = '\0';
+	CString cstr(cReadBuffer);
+	MessageBox(cstr);
 ```
 　　虽然这种方法最为基本，但是它的使用繁琐，而且功能非常简单。我向你推荐的是使用CArchive，它的使用方法简单且功能十分强大。首先还是用CFile声明一个对象，然后用这个对象的指针做参数声明一个CArchive对象，你就可以非常方便地存储各种复杂的数据类型了。它的使用方法见下例。
 　　
