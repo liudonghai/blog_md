@@ -415,8 +415,8 @@ mode value|Checks file for
 
 - CreateDirectory(FileName,securityAttributes);
 - DeleteFile(FileName);
-- MoveFile(ExistingFile,newFile);
-- CopyFile(ExistingFile,NewFile,Exist);
+- MoveFile(ExistingFile,NewFile);
+- CopyFile(ExistingFile,NewFile,IsExist);
  
 >CopyFile: If this parameter is TRUE and the new file specified by lpNewFileName already exists, the function fails. If this parameter is FALSE and the new file already exists, the function overwrites the existing file and succeeds.
 
