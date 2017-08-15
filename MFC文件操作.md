@@ -419,6 +419,3 @@ mode value|Checks file for
 - CopyFile(ExistingFile,NewFile,IsExist);
  
 >CopyFile: If this parameter is TRUE and the new file specified by lpNewFileName already exists, the function fails. If this parameter is FALSE and the new file already exists, the function overwrites the existing file and succeeds.
-
-## 7.3文件创建
-

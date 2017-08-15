@@ -111,7 +111,7 @@ CTimeSpan::Serialize64|Serializes data to or from an archive.
     };
 
 ```
-# 4.1 CTime与tm
+## 4.1 CTime转tm
 
 ``` C++
 
@@ -121,12 +121,30 @@ CTimeSpan::Serialize64|Serializes data to or from an archive.
     time.GetGmtTm(&t2);//返回的UTC时间
 
 ```
+## 4.2 time_t与tm
 
-
+**tm转time_t:**
 
 ``` C++
 
-    struct tm tm1;
-    time_t tt2 = mktime(&tm1);
+    tm tm1;
+    time_t m_time = mktime(&tm1);
 
 ```
+
+**time_t转tm:**
+
+``` C++
+
+	CTime m_Time;
+    time_t tt = m_Time.GetTime();
+    tm tm;
+    localtime_s(&tm, &tt);
+   
+```
+
+## 4.3 CTime与time_t
+
+**time_t转CTime:**
+CTime的构造函数可以直接接受time_t参数；
+**CTime转time_t:**
