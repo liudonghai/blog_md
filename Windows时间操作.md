@@ -147,4 +147,8 @@ CTimeSpan::Serialize64|Serializes data to or from an archive.
 
 **time_t转CTime:**
 CTime的构造函数可以直接接受time_t参数；
+
 **CTime转time_t:**
+__time64_t CTime::GetTime( ) const throw( ); 
+
+# 5.SYSTEMTIME
